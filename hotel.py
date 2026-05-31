@@ -127,15 +127,21 @@ def check_in(matricula: str) -> None:
   funcionario = buscar_funcionario(matricula)
   if not funcionario:
     print(f"[ERRO] Matrícula '{matricula}' não encontrada no cadastro.")
+    st.error(f"[ERRO] Matrícula '{matricula}' não encontrada no cadastro.")
+
     return
 
   if buscar_estadia_ativa(matricula):
     print(f"[ERRO] O funcionário {funcionario['nome']} {funcionario['sobrenome']} já está hospedado.")
+    st.error(f"[ERRO] O funcionário {funcionario['nome']} {funcionario['sobrenome']} já está hospedado.")
+
     return
 
   quarto = proximo_quarto_disponivel("normal") or proximo_quarto_disponivel("extra")
   if not quarto:
     print(f"[ERRO] Não há quartos disponíveis no momento.")
+    st.error(f"Não há quartos disponíveis no momento.")
+
     return
   
   now = datetime.now()
@@ -158,6 +164,10 @@ def check_in(matricula: str) -> None:
       f"→ Quarto {quarto['numero']} ({tipo_label}) | "
       f"Entrada: {nova_estadia['data_checkin']}"
     )
+  
+  st.success(f"[CHECK-IN] {funcionario['nome']} {funcionario['sobrenome']} "
+      f"→ Quarto {quarto['numero']} ({tipo_label}) | "
+      f"Entrada: {nova_estadia['data_checkin']}", icon="✅")
 
 def check_out(matricula: str) -> None:
     funcionario = buscar_funcionario(matricula)
