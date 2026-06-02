@@ -18,8 +18,7 @@ O sistema foi criado para substituir o controle manual feito em planilhas por um
 
 - Python 3.10+
 - Pandas — persistência de dados em CSV
-- Streamlit — interface visual (em desenvolvimento)
-
+- Streamlit — interface visual
 ## 📁 Estrutura
 
 ```
