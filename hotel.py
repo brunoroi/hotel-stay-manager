@@ -1,4 +1,3 @@
-import streamlit as st
 import pandas as pd
 from datetime import datetime
 
@@ -100,7 +99,7 @@ def buscar_quarto(numero: int) -> dict | None:
 
 def buscar_estadia_ativa(matricula: str) -> dict | None:
   for estadia in estadias:
-    if estadia["matricula"] == matricula and estadia["status"] == "ativa":
+    if str(estadia["matricula"]) == matricula and estadia["status"] == "ativa":
       return estadia
   return None
 
@@ -124,25 +123,26 @@ def _salvar_estadias() -> None:
   df_estadias_temp.to_csv("estadias.csv", index=False)
 
 def check_in(matricula: str) -> None:
+  global estadias
+  estadias = pd.read_csv("estadias.csv").to_dict("records")
+  print(estadias)
+
   funcionario = buscar_funcionario(matricula)
   if not funcionario:
     print(f"[ERRO] Matrícula '{matricula}' não encontrada no cadastro.")
-    st.error(f"[ERRO] Matrícula '{matricula}' não encontrada no cadastro.")
 
-    return
+    return False, "Matrícula não encontrada."
 
   if buscar_estadia_ativa(matricula):
     print(f"[ERRO] O funcionário {funcionario['nome']} {funcionario['sobrenome']} já está hospedado.")
-    st.error(f"[ERRO] O funcionário {funcionario['nome']} {funcionario['sobrenome']} já está hospedado.")
 
-    return
+    return False, "O funcionário já possui uma estadia ativa."
 
   quarto = proximo_quarto_disponivel("normal") or proximo_quarto_disponivel("extra")
   if not quarto:
     print(f"[ERRO] Não há quartos disponíveis no momento.")
-    st.error(f"Não há quartos disponíveis no momento.")
 
-    return
+    return False, "Não há quartos disponíveis no momento."
   
   now = datetime.now()
 
@@ -164,33 +164,34 @@ def check_in(matricula: str) -> None:
       f"→ Quarto {quarto['numero']} ({tipo_label}) | "
       f"Entrada: {nova_estadia['data_checkin']}"
     )
-  
-  st.success(f"[CHECK-IN] {funcionario['nome']} {funcionario['sobrenome']} "
-      f"→ Quarto {quarto['numero']} ({tipo_label}) | "
-      f"Entrada: {nova_estadia['data_checkin']}", icon="✅")
+  return True, f"Check-in realizado com sucesso! Quarto {quarto['numero']} ({tipo_label}) reservado para {funcionario['nome']} {funcionario['sobrenome']}."
 
 def check_out(matricula: str) -> None:
-    funcionario = buscar_funcionario(matricula)
-    if not funcionario:
-        print(f"[ERRO] Matrícula '{matricula}' não encontrada no cadastro.")
-        return
-    estadia = buscar_estadia_ativa(matricula)
-    if not estadia:
-        print(f"[ERRO] O funcionário {funcionario['nome']} {funcionario['sobrenome']} não possui estadia ativa.")
-        return
+  global estadias
+  estadias = pd.read_csv("estadias.csv").to_dict("records")
 
-    now = datetime.now()
+  funcionario = buscar_funcionario(matricula)
+  if not funcionario:
+      print(f"[ERRO] Matrícula '{matricula}' não encontrada no cadastro.")
+      return False, "Matrícula não encontrada."
+  estadia = buscar_estadia_ativa(matricula)
+  if not estadia:
+      print(f"[ERRO] O funcionário {funcionario['nome']} {funcionario['sobrenome']} não possui estadia ativa.")
+      return False, "O funcionário não possui estadia ativa."
+ 
+  now = datetime.now()
 
-    estadia["data_checkout"] = now.strftime("%d/%m/%Y %H:%M:%S")
-    estadia["status"] = "encerrada"
+  estadia["data_checkout"] = now.strftime("%d/%m/%Y %H:%M:%S")
+  estadia["status"] = "encerrada"
 
-    _salvar_estadias()
+  _salvar_estadias()
 
-    print(
-      f"[CHECK-OUT] {funcionario['nome']} {funcionario['sobrenome']} "
-      f"← Quarto {estadia['numero_quarto']} liberado | "
-      f"Saída: {estadia['data_checkout']}"
-    )  
+  print(
+    f"[CHECK-OUT] {funcionario['nome']} {funcionario['sobrenome']} "
+    f"← Quarto {estadia['numero_quarto']} liberado | "
+    f"Saída: {estadia['data_checkout']}"
+  )
+  return True, f"Check-out realizado com sucesso! Quarto {estadia['numero_quarto']} liberado para {funcionario['nome']} {funcionario['sobrenome']}."  
 
 def listar_ocupacao() -> None:
     """Exibe o status atual de todos os quartos."""
